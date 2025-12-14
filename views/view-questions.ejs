@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>View Questions</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { margin-bottom: 20px; }
+        .filter-buttons { margin-bottom: 15px; }
+        .filter-buttons button {
+            padding: 8px 12px;
+            margin-right: 5px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .filter-buttons button.active { background-color: #0056b3; }
+        .questions-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .question-box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .correct { color: green; font-weight: bold; }
+        button.editBtn {
+            margin-top: 10px;
+            padding: 6px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+            background-color: orange;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<h2>All Questions</h2>
+
+<div class="filter-buttons">
+    <button class="filterBtn active" data-part="all">All</button>
+    <button class="filterBtn" data-part="partA">Part A</button>
+    <button class="filterBtn" data-part="partB">Part B</button>
+</div>
+
+<div class="questions-container">
+<% if (questions.length === 0) { %>
+    <p>No questions added yet.</p>
+<% } else { %>
+    <% questions.forEach((q, index) => { %>
+        <div class="question-box" data-part="<%= q.part %>">
+            <p><strong>Q<%= index + 1 %> [<%= q.part %>]:</strong> <%= q.question %></p>
+            <ul>
+                <li class="<%= q.correct === 'A' ? 'correct' : '' %>">A: <%= q.optionA %></li>
+                <li class="<%= q.correct === 'B' ? 'correct' : '' %>">B: <%= q.optionB %></li>
+                <li class="<%= q.correct === 'C' ? 'correct' : '' %>">C: <%= q.optionC %></li>
+                <li class="<%= q.correct === 'D' ? 'correct' : '' %>">D: <%= q.optionD %></li>
+            </ul>
+            <form method="GET" action="/admin/edit-question/<%= q._id %>">
+                <button class="editBtn" type="submit">Edit</button>
+            </form>
+        </div>
+    <% }) %>
+<% } %>
+</div>
+
+<script>
+    const filterButtons = document.querySelectorAll(".filterBtn");
+    const questionBoxes = document.querySelectorAll(".question-box");
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            // Remove active class from all buttons
+            filterButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            const part = btn.getAttribute("data-part");
+
+            questionBoxes.forEach(box => {
+                if (part === "all" || box.getAttribute("data-part") === part) {
+                    box.style.display = "block";
+                } else {
+                    box.style.display = "none";
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

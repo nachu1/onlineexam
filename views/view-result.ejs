@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Your Result</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f2f5f9;
+            color: #222;
+        }
+
+        /* HEADER */
+        .header {
+            background: #1f3a5f;
+            color: white;
+            padding: 16px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* CONTAINER */
+        .container {
+            max-width: 420px;
+            margin: 40px auto;
+            padding: 0 15px;
+        }
+
+        /* CARD */
+        .card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #1f3a5f;
+        }
+
+        /* RESULT ROW */
+        .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e6ebf1;
+            font-size: 15px;
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .value {
+            font-weight: 600;
+        }
+
+        .score {
+            color: #1e5aa8;
+            font-size: 18px;
+        }
+
+        /* BUTTON */
+        button {
+            width: 100%;
+            margin-top: 25px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            background: #1e5aa8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #174a8a;
+        }
+
+        @media (max-width: 480px) {
+            .row {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    Exam Result
+</div>
+
+<div class="container">
+    <div class="card">
+
+        <h2>Your Performance</h2>
+
+        <div class="row">
+            <span class="label">Score</span>
+            <span class="value score"><%= result.score %></span>
+        </div>
+
+        <div class="row">
+            <span class="label">Correct Answers</span>
+            <span class="value"><%= result.correct %></span>
+        </div>
+
+        <div class="row">
+            <span class="label">Wrong Answers</span>
+            <span class="value"><%= result.wrong %></span>
+        </div>
+
+        <div class="row">
+            <span class="label">Not Attempted</span>
+            <span class="value"><%= result.notAttended %></span>
+        </div>
+
+        <div class="row">
+            <span class="label">Total Questions</span>
+            <span class="value"><%= result.totalQuestions %></span>
+        </div>
+
+        <button onclick="window.location='/dashboard'">
+            Back to Dashboard
+        </button>
+
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Exam</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f2f5f9;
+            color: #222;
+        }
+
+        /* HEADER */
+        .header {
+            background: #1f3a5f;
+            color: white;
+            padding: 14px 20px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* MAIN */
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        .info {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .info span {
+            background: #ffffff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        /* TIMER */
+        .timer-box {
+            background: #fff3cd;
+            border: 1px solid #ffe69c;
+            color: #92400e;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        /* QUESTION CARD */
+        .question-block {
+            background: #ffffff;
+            padding: 18px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 18px;
+        }
+
+        .question-block p {
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            padding: 8px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 6px;
+            border: 1px solid #e2e8f0;
+            transition: 0.2s;
+        }
+
+        label:hover {
+            background: #f1f5f9;
+        }
+
+        input[type="radio"] {
+            margin-right: 8px;
+        }
+
+        /* SUBMIT */
+        .submit-box {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        button {
+            background: #1e3a6f; /* Dark initial color */
+            color: #ffffff;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #174a8a;
+        }
+
+        button:disabled {
+            background: #7a8ca3;
+            cursor: not-allowed;
+        }
+
+        /* NO QUESTIONS */
+        .no-questions {
+            color: red;
+            text-align: center;
+            margin-top: 60px;
+            font-size: 18px;
+        }
+
+        @media (max-width: 600px) {
+            .info {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    Online Examination
+</div>
+
+<div class="container">
+
+    <div class="info">
+        <span>Student: <strong><%= studentName || "-" %></strong></span>
+        <span>Total Questions: <strong><%= totalQuestions || 0 %></strong></span>
+    </div>
+
+    <div class="timer-box">
+        Time Remaining: <span id="timer">01:00:00</span>
+    </div>
+
+    <form id="examForm">
+
+        <% if (!questions || questions.length === 0) { %>
+            <div class="no-questions">
+                Sorry! There are currently no questions available.<br>
+                Please contact your instructor.
+            </div>
+        <% } else { %>
+
+            <% questions.forEach(function(q, idx) { %>
+                <div class="question-block">
+                    <p><%= idx + 1 %>. <%= q.question %></p>
+
+                    <label>
+                        <input type="radio" name="<%= q._id %>" value="A">
+                        <%= q.optionA %>
+                    </label>
+
+                    <label>
+                        <input type="radio" name="<%= q._id %>" value="B">
+                        <%= q.optionB %>
+                    </label>
+
+                    <label>
+                        <input type="radio" name="<%= q._id %>" value="C">
+                        <%= q.optionC %>
+                    </label>
+
+                    <label>
+                        <input type="radio" name="<%= q._id %>" value="D">
+                        <%= q.optionD %>
+                    </label>
+                </div>
+            <% }); %>
+
+            <div class="submit-box">
+                <button type="submit">Submit Exam</button>
+            </div>
+
+        <% } %>
+    </form>
+</div>
+
+<script>
+let timeLeft = 60*60; // testing: 1 hr
+let alreadySubmitted = false;
+let isSubmitting = false;
+
+/* ---------------- TIMER ---------------- */
+function updateTimer() {
+    let hours = Math.floor(timeLeft / 3600);
+    let minutes = Math.floor((timeLeft % 3600) / 60);
+    let seconds = timeLeft % 60;
+
+    document.getElementById("timer").innerText =
+        String(hours).padStart(2, "0") + ":" +
+        String(minutes).padStart(2, "0") + ":" +
+        String(seconds).padStart(2, "0");
+
+    if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        alert("Time is up! Auto submitting...");
+        submitExam(true);
+    }
+    timeLeft--;
+}
+
+let timerInterval = setInterval(updateTimer, 1000);
+
+/* ---------------- HELPERS ---------------- */
+function collectAnswers() {
+    const answers = {};
+    document.querySelectorAll("input[type=radio]:checked").forEach(r => {
+        answers[r.name] = r.value;
+    });
+    return answers;
+}
+
+/* ---------------- SUBMIT ---------------- */
+async function submitExam(auto = false) {
+    if (alreadySubmitted) return;
+
+    alreadySubmitted = true;
+    isSubmitting = true;
+
+    const answers = collectAnswers();
+
+    const res = await fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers })
+    });
+
+    const jr = await res.json();
+    if (!jr.success) {
+        alert(jr.msg || "Submit failed");
+        return;
+    }
+
+    alert(auto ? "Exam auto-submitted." : "Exam submitted.");
+    window.location = "/dashboard";
+}
+
+/* ---------------- MANUAL SUBMIT ---------------- */
+document.getElementById("examForm").onsubmit = (e) => {
+    e.preventDefault();
+    submitExam(false);
+};
+
+/* ---------------- BACK BUTTON (CONFIRM + CANCEL) ---------------- */
+history.pushState(null, null, location.href);
+
+window.addEventListener("popstate", function () {
+    if (alreadySubmitted || isSubmitting) return;
+
+    const leave = confirm(
+        "You are leaving the exam.\n\n" +
+        "OK → Exam will be auto-submitted\n" +
+        "Cancel → Stay on exam"
+    );
+
+    if (leave) {
+        submitExam(true);
+    } else {
+        // stay on exam
+        history.pushState(null, null, location.href);
+    }
+});
+
+/* ---------------- TAB CLOSE / BROWSER CLOSE ---------------- */
+window.addEventListener("unload", function () {
+    if (alreadySubmitted || isSubmitting) return;
+
+    navigator.sendBeacon(
+        "/submit",
+        JSON.stringify({ answers: collectAnswers() })
+    );
+});
+</script>
+
+
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

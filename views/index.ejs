@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Online Exam - Start</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1>Welcome to Online Exam</h1>
+
+    <form id="startForm">
+        <input type="text" id="studentName" placeholder="Enter your name" required>
+        <button type="submit">Start Exam</button>
+    </form>
+
+    <script>
+        document.getElementById("startForm").onsubmit = (e) => {
+            e.preventDefault();
+            const name = document.getElementById("studentName").value.trim();
+            if (!name) return;
+            localStorage.setItem("studentName", name);
+            // navigate to exam with name in query
+            window.location = `/exam?name=${encodeURIComponent(name)}`;
+        };
+    </script>
+</body>
+</html>
+

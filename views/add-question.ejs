@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Add Question</title>
+    <link rel="stylesheet" href="/style.css">
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #2f3640;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #0984e3;
+        }
+
+        button {
+            margin-top: 18px;
+            padding: 12px;
+            width: 100%;
+            border: none;
+            border-radius: 6px;
+            background: #0984e3;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0652a3;
+        }
+
+        .success {
+            color: green;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .error {
+            color: red;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .limitInfo {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        @media (max-width: 600px) {
+            .limitInfo {
+                flex-direction: column;
+                gap: 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="card">
+
+        <h2>Add New Question</h2>
+
+        <% if (message) { %>
+            <div class="<%= messageType %>"><%= message %></div>
+        <% } %>
+
+        <div class="limitInfo">
+            <span>Part A: <strong id="countA"><%= countA || 0 %></strong> / 25</span>
+            <span>Part B: <strong id="countB"><%= countB || 0 %></strong> / 75</span>
+        </div>
+
+        <form id="addQuestionForm">
+
+            <label>Part</label>
+            <select name="part" required>
+                <option value="">Select Part</option>
+                <option value="partA" <%= lastSelectedPart === "partA" ? "selected" : "" %>>Part A</option>
+                <option value="partB" <%= lastSelectedPart === "partB" ? "selected" : "" %>>Part B</option>
+            </select>
+
+            <label>Question</label>
+            <input type="text" name="question" required>
+
+            <label>Option A</label>
+            <input type="text" name="optionA" required>
+
+            <label>Option B</label>
+            <input type="text" name="optionB" required>
+
+            <label>Option C</label>
+            <input type="text" name="optionC" required>
+
+            <label>Option D</label>
+            <input type="text" name="optionD" required>
+
+            <label>Correct Answer</label>
+            <select name="correct" required>
+                <option value="">Select Correct Option</option>
+                <option value="A">Option A</option>
+                <option value="B">Option B</option>
+                <option value="C">Option C</option>
+                <option value="D">Option D</option>
+            </select>
+
+            <button type="submit">Add Question</button>
+        </form>
+
+    </div>
+</div>
+
+<script>
+let lastPartSelected = ""; // remember selected part
+
+document.querySelector("select[name='part']").addEventListener("change", function () {
+    lastPartSelected = this.value;
+});
+
+document.getElementById("addQuestionForm").onsubmit = async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const data = {};
+    formData.forEach((value, key) => data[key] = value);
+
+    const res = await fetch("/admin/add-question", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+
+    const jr = await res.json();
+    alert(jr.msg);
+
+    if (jr.success) {
+        this.reset();
+
+        // ✅ restore previously selected part
+        if (lastPartSelected) {
+            document.querySelector("select[name='part']").value = lastPartSelected;
+        }
+
+        // ✅ update live counts
+        if (jr.countA !== undefined) {
+            document.getElementById("countA").innerText = jr.countA;
+        }
+        if (jr.countB !== undefined) {
+            document.getElementById("countB").innerText = jr.countB;
+        }
+    }
+};
+</script>
+
+
+</body>
+</html>

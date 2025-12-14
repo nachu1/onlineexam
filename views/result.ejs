@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Your Result</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1>Your Result</h1>
+    <div id="output">Loading...</div>
+
+    <script>
+        const studentName = localStorage.getItem("studentName");
+
+        async function fetchResult() {
+            if (!studentName) {
+                document.getElementById("output").innerText = "No student name found.";
+                return;
+            }
+
+            try {
+                const r = await fetch(`/api/result?name=${encodeURIComponent(studentName)}`);
+                const jr = await r.json();
+
+                if (jr.msg) {
+                    // Result not published yet or not submitted
+                    document.getElementById("output").innerText = jr.msg;
+                } else {
+                    document.getElementById("output").innerHTML = `
+                        <p>Score: ${jr.score}</p>
+                        <p>Correct: ${jr.correct}</p>
+                        <p>Wrong: ${jr.wrong}</p>
+                        <p>Not Attempted: ${jr.notAttended}</p>
+                        <p>Total Questions: ${jr.totalQuestions}</p>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById("output").innerText = "Error fetching result.";
+                console.error(err);
+            }
+        }
+
+        fetchResult();
+    </script>
+</body>
+</html>
+

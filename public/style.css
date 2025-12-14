@@ -1,0 +1,7 @@
+/* public/style.css */
+body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 12px; }
+h1 { color: #222; }
+.question-block { margin-bottom: 8px; }
+button { margin: 6px; padding: 6px 12px; }
+table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+table td, table th { padding: 8px; border: 1px solid #ccc; text-align: left; }

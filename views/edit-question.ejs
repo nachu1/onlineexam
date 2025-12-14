@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Edit Question</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { max-width: 600px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; margin-top: 4px; }
+        button { margin-top: 15px; padding: 10px 15px; }
+        .success { color: green; margin-top: 10px; }
+        .error { color: red; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<h2>Edit Question</h2>
+
+<% if (message) { %>
+    <div class="<%= messageType %>"><%= message %></div>
+<% } %>
+
+<form id="editForm">
+    <label>Part:</label>
+    <select name="part" required>
+        <option value="partA" <%= question.part === "partA" ? "selected" : "" %>>Part A</option>
+        <option value="partB" <%= question.part === "partB" ? "selected" : "" %>>Part B</option>
+    </select>
+
+    <label>Question:</label>
+    <input type="text" name="question" value="<%= question.question %>" required>
+
+    <label>Option A:</label>
+    <input type="text" name="optionA" value="<%= question.optionA %>" required>
+
+    <label>Option B:</label>
+    <input type="text" name="optionB" value="<%= question.optionB %>" required>
+
+    <label>Option C:</label>
+    <input type="text" name="optionC" value="<%= question.optionC %>" required>
+
+    <label>Option D:</label>
+    <input type="text" name="optionD" value="<%= question.optionD %>" required>
+
+    <label>Correct Answer:</label>
+    <select name="correct" required>
+        <option value="A" <%= question.correct === "A" ? "selected" : "" %>>Option A</option>
+        <option value="B" <%= question.correct === "B" ? "selected" : "" %>>Option B</option>
+        <option value="C" <%= question.correct === "C" ? "selected" : "" %>>Option C</option>
+        <option value="D" <%= question.correct === "D" ? "selected" : "" %>>Option D</option>
+    </select>
+
+    <button type="submit">Update Question</button>
+</form>
+
+<div id="msg" class="success" style="display:none;"></div>
+
+<script>
+    const form = document.getElementById('editForm');
+    const msgDiv = document.getElementById('msg');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const data = {};
+        formData.forEach((value, key) => data[key] = value);
+
+        const response = await fetch(`/admin/edit-question/<%= question._id %>`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            msgDiv.style.display = 'block';
+            msgDiv.textContent = result.msg;
+
+            // redirect to view-questions after 1.5 seconds
+            setTimeout(() => {
+                window.location.href = "/admin/view-questions";
+            }, 1500);
+        } else {
+            msgDiv.style.display = 'block';
+            msgDiv.textContent = result.msg;
+            msgDiv.style.color = 'red';
+        }
+    });
+</script>
+
+</body>
+</html>
+

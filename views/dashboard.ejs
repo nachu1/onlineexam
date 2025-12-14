@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Student Dashboard</title>
+
+    <style>
+    body {
+        margin: 0;
+        font-family: "Segoe UI", Arial, sans-serif;
+        background: #f2f5f9;
+        color: #222;
+    }
+
+    /* HEADER */
+    .header {
+        background: #1f3a5f;
+        color: #ffffff;
+        padding: 16px 30px;
+        font-size: 20px;
+        font-weight: 600;
+        text-align: center;   /* ✅ centered */
+        letter-spacing: 0.3px;
+    }
+
+    /* MAIN CONTAINER */
+    .container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 0 15px;
+    }
+
+    /* CARD */
+    .card {
+        background: #ffffff;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        padding: 28px;
+    }
+
+    h2 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 22px;
+        color: #1f3a5f;
+        text-align: center;
+    }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        font-size: 14px;
+        color: #333;
+    }
+
+    input {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #cfd6df;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: #2f5f9e;
+    }
+
+ button {
+    width: 100%;
+    padding: 11px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
+
+/* PRIMARY — Start Exam */
+button.primary {
+    background-color: #1e5aa8 !important;  /* dark blue */
+    color: #ffffff !important;             /* white text */
+}
+
+
+button.primary:hover {
+    background-color: #174a8a !important;
+}
+
+/* SECONDARY — View Result */
+button.secondary {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+
+button.secondary:hover {
+    background-color: #1e293b !important;
+}
+
+
+/* LOGOUT */
+button.logout {
+    background-color: #e4e7ec !important;
+    color: #2b2b2b !important;
+}
+
+button.logout:hover {
+    background-color: #d6dbe2 !important;
+}
+
+/* DISABLED */
+button:disabled {
+    background-color: #475569 !important;  /* dark gray */
+    color: #ffffff !important;
+    cursor: not-allowed;
+    opacity: 0.9;
+}
+
+
+
+   .note {
+    margin-top: 15px;
+    font-size: 13px;
+    color: #b45309;              /* warning amber */
+    background: #fff7ed;         /* light warning background */
+    border: 1px solid #fde68a;
+    padding: 8px 10px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 500;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+    Student Dashboard
+</div>
+
+<div class="container">
+    <div class="card">
+
+        <h2>Welcome <%= student.displayName || "Student" %></h2>
+
+        <label>Enter Name</label>
+        <input
+            type="text"
+            id="studentName"
+            value="<%= student.displayName || "" %>"
+            placeholder="Enter your full name"
+        >
+
+        <% if (alreadySubmitted) { %>
+            <button class="primary" disabled>
+                You have already submitted this exam
+            </button>
+        <% } else { %>
+            <button class="primary" onclick="startExam()">
+                Start Exam
+            </button>
+        <% } %>
+
+        <button class="secondary" onclick="viewResult()">
+            View Result
+        </button>
+
+        <button class="logout" onclick="logout()">
+            Logout
+        </button>
+
+        <div class="note">
+            Please verify your name before starting the exam.
+        </div>
+
+    </div>
+</div>
+
+<script>
+async function startExam() {
+    const name = document.getElementById("studentName").value.trim();
+    if (!name) return alert("Enter your name");
+
+    const res = await fetch("/student/set-name", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ displayName: name })
+    });
+
+    const jr = await res.json();
+    if (!jr.success) {
+        alert("Could not set name");
+        return;
+    }
+
+    window.location.href = "/exam";
+}
+
+function viewResult() {
+    window.location.href = "/view-result";
+}
+
+function logout() {
+    window.location.href = "/logout";
+}
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
