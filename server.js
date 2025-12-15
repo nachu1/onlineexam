@@ -30,9 +30,10 @@ app.use(
 
 /* ------------------ DATABASE ------------------ */
 mongoose
-    .connect(process.env.MONGO_URI)
+    .connect("mongodb+srv://onlineexam:Exam%401234@cluster0.0ci6zj6.mongodb.net/onlineexam?retryWrites=true&w=majority")
     .then(() => console.log("MongoDB connected"))
     .catch((err) => console.error(err));
+
 
 
 /* ------------------ HELPERS ------------------ */
