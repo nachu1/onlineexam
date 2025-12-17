@@ -1,10 +1,12 @@
 // server.js
+console.log("SERVER.JS LOADED");
 const express = require("express");
 const mongoose = require("mongoose");
 const session = require("express-session");
 const bodyParser = require("body-parser");
 const path = require("path");
-
+const bcrypt=require("bcryptjs");
+const crypto=require("crypto");
 const Student = require("./models/student");
 const Result = require("./models/result");
 const Question = require("./models/question");
@@ -60,29 +62,100 @@ app.get("/signup", (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
-    const { email } = req.body;
-    if (!email) return res.render("signup", { message: "Email required" });
+    const { email, password } = req.body;
+
+    if (!email || !password)
+        return res.render("signup", { message: "All fields required" });
 
     if (await Student.findOne({ email }))
         return res.render("signup", { message: "Email already registered" });
 
-    const student = await Student.create({ email });
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const student = await Student.create({
+        email,
+        password: hashedPassword
+    });
+
     req.session.student = student;
     res.redirect("/dashboard");
 });
+
 
 app.get("/login", (req, res) => {
     res.render("login", { message: null });
 });
 
 app.post("/login", async (req, res) => {
-    const student = await Student.findOne({ email: req.body.email });
+    const { email, password } = req.body;
+
+    const student = await Student.findOne({ email });
     if (!student)
         return res.render("login", { message: "Email not found" });
+
+    const isMatch = await bcrypt.compare(password, student.password);
+    if (!isMatch)
+        return res.render("login", { message: "Invalid password" });
 
     req.session.student = student;
     res.redirect("/dashboard");
 });
+
+app.get("/forgot-password", (req, res) => {
+    res.render("forgot-password", { message: null });
+});
+app.post("/forgot-password", async (req, res) => {
+    const student = await Student.findOne({ email: req.body.email });
+    if (!student)
+        return res.render("forgot-password", { message: "Email not found" });
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    await Student.updateOne(
+        { _id: student._id },
+        {
+            resetToken: token,
+            resetTokenExpiry: Date.now() + 15 * 60 * 1000
+        }
+    );
+
+    console.log("RESET LINK:");
+    console.log(`http://localhost:3000/reset-password/${token}`);
+    // later replace with Render URL
+
+    res.render("forgot-password", {
+        message: "Reset link generated (check server console)"
+    });
+});
+app.get("/reset-password/:token", async (req, res) => {
+    const student = await Student.findOne({
+        resetToken: req.params.token,
+        resetTokenExpiry: { $gt: Date.now() }
+    });
+
+    if (!student)
+        return res.send("Invalid or expired link");
+
+    res.render("reset-password", { message: null });
+});
+
+app.post("/reset-password/:token", async (req, res) => {
+    const student = await Student.findOne({
+        resetToken: req.params.token,
+        resetTokenExpiry: { $gt: Date.now() }
+    });
+
+    if (!student)
+        return res.send("Invalid or expired link");
+
+    student.password = await bcrypt.hash(req.body.password, 10);
+    student.resetToken = undefined;
+    student.resetTokenExpiry = undefined;
+
+    await student.save();
+    res.redirect("/login");
+});
+
 
 app.get("/logout", (req, res) => {
     req.session.destroy(() => res.redirect("/login"));
@@ -429,35 +502,7 @@ app.post("/admin/add-question", async (req, res) => {
 });
 
 // GET edit question page
-app.get("/admin/edit-question/:id", async (req, res) => {
-    if (!req.session.admin) return res.redirect("/admin/login");
 
-    const question = await Question.findById(req.params.id);
-    if (!question) return res.send("Question not found.");
-
-    res.render("edit-question", { question, message: null, messageType: "success" });
-});
-
-app.post("/admin/edit-question/:id", async (req, res) => {
-    if (!req.session.admin) return res.json({ msg: "Unauthorized" });
-
-    try {
-        await Question.findByIdAndUpdate(req.params.id, {
-            part: req.body.part,
-            question: req.body.question,
-            optionA: req.body.optionA,
-            optionB: req.body.optionB,
-            optionC: req.body.optionC,
-            optionD: req.body.optionD,
-            correct: req.body.correct
-        });
-
-        res.json({ msg: "Question updated successfully", success: true });
-    } catch (err) {
-        console.error(err);
-        res.json({ msg: "Failed to update question", success: false });
-    }
-});
 
 
 
