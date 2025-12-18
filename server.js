@@ -119,37 +119,43 @@ app.get("/forgot-password", (req, res) => {
     res.render("forgot-password", { message: null });
 });
 app.post("/forgot-password", async (req, res) => {
-    const student = await Student.findOne({ email: req.body.email });
-    if (!student)
-        return res.render("forgot-password", { message: "Email not found" });
+    try {
+        const { email } = req.body;
+        const student = await Student.findOne({ email });
+        if (!student)
+            return res.render("forgot-password", { message: "Email not found" });
 
-    const token = crypto.randomBytes(32).toString("hex");
+        const token = crypto.randomBytes(32).toString("hex");
+        student.resetToken = token;
+        student.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
+        await student.save();
 
-    student.resetToken = token;
-    student.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
-    await student.save();
+        const resetLink = `${process.env.BASE_URL}/reset-password/${token}`;
 
-    const resetLink = `${process.env.BASE_URL}/reset-password/${token}`;
-try {
-    await transporter.sendMail({
-        from: `"Online Exam" <${process.env.MAIL_USER}>`,
-        to: student.email,
-        subject: "Reset your password",
-        html: `
-            <p>You requested a password reset.</p>
-            <p>Click the link below (valid for 15 minutes):</p>
-            <a href="${resetLink}">${resetLink}</a>
-        `,
-    });
+        // Send email asynchronously but don't block response
+        transporter.sendMail({
+            from: `"Online Exam" <${process.env.MAIL_USER}>`,
+            to: student.email,
+            subject: "Reset your password",
+            html: `
+                <p>You requested a password reset.</p>
+                <p>Click the link below (valid for 15 minutes):</p>
+                <a href="${resetLink}">${resetLink}</a>
+            `,
+        }, (err, info) => {
+            if (err) console.error("Send reset link error:", err);
+            else console.log("Reset link sent:", info.response);
+        });
 
-    res.render("forgot-password", {
-        message: "Reset link sent to your email",
-    });
-} catch (err) {
-    console.error("Send reset link error:", err);
-    res.render("forgot-password", { message: "Failed to send email. Try again later." });
-}
-   
+        // Immediately respond to the user — don't wait for email
+        res.render("forgot-password", {
+            message: "If your email exists, a reset link has been sent.",
+        });
+
+    } catch (err) {
+        console.error("Forgot password route error:", err);
+        res.render("forgot-password", { message: "Something went wrong. Try again later." });
+    }
 });
 app.get("/reset-password/:token", async (req, res) => {
     const student = await Student.findOne({
