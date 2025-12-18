@@ -5,14 +5,15 @@ const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, // IMPORTANT
     auth: {
         user: process.env.MAIL_USER,
         pass: process.env.MAIL_PASS,
     },
-    logger: true,
-    debug: true
+    tls: {
+        rejectUnauthorized: false
+    }
 });
 
 transporter.verify((err, success) => {
@@ -136,7 +137,7 @@ app.post("/forgot-password", async (req, res) => {
         await student.save();
 
         const resetLink = `${process.env.BASE_URL}/reset-password/${token}`;
-
+        console.log("ResetLink",resetLink);
         // Send email asynchronously but don't block response
         transporter.sendMail({
             from: `"Online Exam" <${process.env.MAIL_USER}>`,
