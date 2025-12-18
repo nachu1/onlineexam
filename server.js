@@ -1,5 +1,20 @@
 // server.js
+require("dotenv").config();
 console.log("SERVER.JS LOADED");
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+    },
+});
+transporter.verify((err, success) => {
+    if (err) console.error("Mail error:", err);
+    else console.log("Mail server ready");
+});
+
 const express = require("express");
 const mongoose = require("mongoose");
 const session = require("express-session");
@@ -32,10 +47,9 @@ app.use(
 
 /* ------------------ DATABASE ------------------ */
 mongoose
-    .connect("mongodb+srv://onlineexam:Exam%401234@cluster0.0ci6zj6.mongodb.net/onlineexam?retryWrites=true&w=majority")
+    .connect(process.env.MONGODB_URI)
     .then(() => console.log("MongoDB connected"))
-    .catch((err) => console.error(err));
-
+    .catch((err) => console.error("MongoDB error:", err));
 
 
 /* ------------------ HELPERS ------------------ */
@@ -111,20 +125,25 @@ app.post("/forgot-password", async (req, res) => {
 
     const token = crypto.randomBytes(32).toString("hex");
 
-    await Student.updateOne(
-        { _id: student._id },
-        {
-            resetToken: token,
-            resetTokenExpiry: Date.now() + 15 * 60 * 1000
-        }
-    );
+    student.resetToken = token;
+    student.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
+    await student.save();
 
-    console.log("RESET LINK:");
-    console.log(`http://localhost:3000/reset-password/${token}`);
-    // later replace with Render URL
+    const resetLink = `${process.env.BASE_URL}/reset-password/${token}`;
+
+    await transporter.sendMail({
+        from: `"Online Exam" <${process.env.MAIL_USER}>`,
+        to: student.email,
+        subject: "Reset your password",
+        html: `
+            <p>You requested a password reset.</p>
+            <p>Click the link below (valid for 15 minutes):</p>
+            <a href="${resetLink}">${resetLink}</a>
+        `,
+    });
 
     res.render("forgot-password", {
-        message: "Reset link generated (check server console)"
+        message: "Reset link sent to your email",
     });
 });
 app.get("/reset-password/:token", async (req, res) => {
@@ -200,6 +219,11 @@ app.get("/dashboard", async (req, res) => {
 /* ------------------ EXAM PAGE ------------------ */
 app.get("/exam", async (req, res) => {
     if (!req.session.student) return res.redirect("/login");
+    const student = await Student.findById(req.session.student._id);
+
+if (student.examLocked) {
+    return res.send("You have already started the exam. Re-entry is not allowed.");
+}
 
     const config = await getConfig();
 
@@ -254,6 +278,9 @@ if (req.session.examStarted) {
 
     req.session.examStarted = false;
     req.session.examStartTime = null;
+    await Student.findByIdAndUpdate(req.session.student._id, {
+    examLocked: false
+});
 
     return res.send(
         "You left the exam. It has been auto-submitted and cannot be re-opened."
@@ -263,6 +290,9 @@ if (req.session.examStarted) {
     // ✅ First time entry
     req.session.examStarted = true;
     req.session.examStartTime = Date.now();
+    await Student.findByIdAndUpdate(req.session.student._id, {
+    examLocked: true
+});
 
     const questions = await Question.find();
 
@@ -325,6 +355,9 @@ app.post("/submit", async (req, res) => {
     // ✅ clear exam state
     req.session.examStarted = false;
     req.session.examStartTime = null;
+    await Student.findByIdAndUpdate(req.session.student._id, {
+    examLocked: false
+});
 
     // ⚠️ IMPORTANT: beacon requests don't wait
     if (req.headers["content-type"] === "application/json") {

@@ -6,7 +6,11 @@ const studentSchema = new mongoose.Schema({
   password: { type: String, required: true },
 
   resetToken: { type: String },
-  resetTokenExpiry: { type: Date }
+  resetTokenExpiry: { type: Date },
+  examLocked:{
+    type:Boolean,
+    default:false
+  },
 
 }, { timestamps: true });
 
