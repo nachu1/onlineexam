@@ -130,7 +130,7 @@ app.post("/forgot-password", async (req, res) => {
     await student.save();
 
     const resetLink = `${process.env.BASE_URL}/reset-password/${token}`;
-
+try {
     await transporter.sendMail({
         from: `"Online Exam" <${process.env.MAIL_USER}>`,
         to: student.email,
@@ -145,6 +145,11 @@ app.post("/forgot-password", async (req, res) => {
     res.render("forgot-password", {
         message: "Reset link sent to your email",
     });
+} catch (err) {
+    console.error("Send reset link error:", err);
+    res.render("forgot-password", { message: "Failed to send email. Try again later." });
+}
+   
 });
 app.get("/reset-password/:token", async (req, res) => {
     const student = await Student.findOne({
