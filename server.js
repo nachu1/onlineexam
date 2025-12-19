@@ -119,44 +119,46 @@ app.post("/forgot-password", async (req, res) => {
         await student.save();
 
         const resetLink = `${process.env.BASE_URL}/reset-password/${token}`;
-        console.log("ResetLink",resetLink);
-        // Send email asynchronously but don't block response
-       await axios.post(
-    "https://api.brevo.com/v3/smtp/email",
-    {
-        sender: {
-            name: "Online Exam",
-            email: "no-reply@onlineexam.com" // can be anything
-        },
-        to: [
-            {
-                email: student.email
-            }
-        ],
-        subject: "Reset your password",
-        htmlContent: `
-            <p>You requested a password reset.</p>
-            <p>Click the link below (valid for 15 minutes):</p>
-            <a href="${resetLink}">${resetLink}</a>
-        `
-    },
-    {
-        headers: {
-            "api-key": process.env.BREVO_API_KEY,
-            "Content-Type": "application/json",
-            "accept": "application/json"
-        }
-    }
-);
+        console.log("ResetLink:", resetLink);
 
-        // Immediately respond to the user — don't wait for email
+        await axios.post(
+            "https://api.brevo.com/v3/smtp/email",
+            {
+                sender: {
+                    name: "Online Exam",
+                    email: "onlineexamapp44@gmail.com"
+                },
+                to: [{ email: student.email }],
+                subject: "Reset your password",
+                htmlContent: `
+                    <p>You requested a password reset.</p>
+                    <p>Click the link below (valid for 15 minutes):</p>
+                    <a href="${resetLink}">${resetLink}</a>
+                `
+            },
+            {
+                headers: {
+                    "api-key": process.env.BREVO_API_KEY,
+                    "Content-Type": "application/json",
+                    "accept": "application/json"
+                }
+            }
+        );
+
         res.render("forgot-password", {
-            message: "If your email exists, a reset link has been sent.",
+            message: "If your email exists, a reset link has been sent."
         });
 
     } catch (err) {
-        console.error("Forgot password route error:", err);
-        res.render("forgot-password", { message: "Something went wrong. Try again later." });
+        if (err.response) {
+            console.error("Brevo API error:", err.response.data);
+        } else {
+            console.error("Forgot password error:", err.message);
+        }
+
+        res.render("forgot-password", {
+            message: "Something went wrong. Try again later."
+        });
     }
 });
 app.get("/reset-password/:token", async (req, res) => {
