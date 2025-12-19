@@ -1,25 +1,7 @@
 // server.js
 require("dotenv").config();
 console.log("SERVER.JS LOADED");
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // IMPORTANT
-    auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-    },
-    tls: {
-        rejectUnauthorized: false
-    }
-});
-
-transporter.verify((err, success) => {
-    if (err) console.error("Mail error:", err);
-    else console.log("Mail server ready");
-});
+const axios = require("axios");
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -139,19 +121,33 @@ app.post("/forgot-password", async (req, res) => {
         const resetLink = `${process.env.BASE_URL}/reset-password/${token}`;
         console.log("ResetLink",resetLink);
         // Send email asynchronously but don't block response
-        transporter.sendMail({
-            from: `"Online Exam" <${process.env.MAIL_USER}>`,
-            to: student.email,
-            subject: "Reset your password",
-            html: `
-                <p>You requested a password reset.</p>
-                <p>Click the link below (valid for 15 minutes):</p>
-                <a href="${resetLink}">${resetLink}</a>
-            `,
-        }, (err, info) => {
-            if (err) console.error("Send reset link error:", err);
-            else console.log("Reset link sent:", info.response);
-        });
+       await axios.post(
+    "https://api.brevo.com/v3/smtp/email",
+    {
+        sender: {
+            name: "Online Exam",
+            email: "no-reply@onlineexam.com" // can be anything
+        },
+        to: [
+            {
+                email: student.email
+            }
+        ],
+        subject: "Reset your password",
+        htmlContent: `
+            <p>You requested a password reset.</p>
+            <p>Click the link below (valid for 15 minutes):</p>
+            <a href="${resetLink}">${resetLink}</a>
+        `
+    },
+    {
+        headers: {
+            "api-key": process.env.BREVO_API_KEY,
+            "Content-Type": "application/json",
+            "accept": "application/json"
+        }
+    }
+);
 
         // Immediately respond to the user — don't wait for email
         res.render("forgot-password", {
