@@ -605,6 +605,9 @@ app.post("/admin/next", async (req, res) => {
     config.resultPublished = false;
     await config.save();
 
+    // 🔓 Unlock all students for new exam
+    await Student.updateMany({}, { examLocked: false });
+
     res.json({ msg: "Moved to next exam" });
 });
 // Delete all questions
